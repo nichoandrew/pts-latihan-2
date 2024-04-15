@@ -1,0 +1,161 @@
+Index: app/src/main/java/id/putraprima/skorbola/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package id.putraprima.skorbola;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\n\r\nimport android.content.Context;\r\nimport android.content.Intent;\r\nimport android.graphics.Bitmap;\r\nimport android.graphics.Canvas;\r\nimport android.graphics.drawable.BitmapDrawable;\r\nimport android.graphics.drawable.Drawable;\r\nimport android.net.Uri;\r\nimport android.os.Bundle;\r\nimport android.provider.MediaStore;\r\nimport android.util.Log;\r\nimport android.view.View;\r\nimport android.widget.Button;\r\nimport android.widget.EditText;\r\nimport android.widget.ImageView;\r\nimport android.widget.Toast;\r\n\r\nimport java.io.ByteArrayOutputStream;\r\nimport java.io.IOException;\r\n\r\npublic class MainActivity extends AppCompatActivity {\r\n\r\n    EditText homeTeamInput, awayTeamInput;\r\n    ImageView homeTeamLogo, awayTeamLogo;\r\n    Button nextButton;\r\n\r\n    private static final int HOME_LOGO_REQUEST_CODE = 1;\r\n    private static final int AWAY_LOGO_REQUEST_CODE = 2;\r\n    private static final int PICK_IMAGE_REQUEST = 1;\r\n\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_main);\r\n        //TODO\r\n\r\n        homeTeamInput = findViewById(R.id.home_team);\r\n        awayTeamInput = findViewById(R.id.away_team);\r\n        homeTeamLogo = findViewById(R.id.home_logo);\r\n        awayTeamLogo = findViewById(R.id.away_logo);\r\n        nextButton = findViewById(R.id.btn_team);\r\n\r\n\r\n\r\n        // Mengatur listener untuk nextButton\r\n        nextButton.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                // Validasi input Home Team dan Away Team\r\n                String homeTeam = homeTeamInput.getText().toString().trim();\r\n                String awayTeam = awayTeamInput.getText().toString().trim();\r\n\r\n                if (homeTeam.isEmpty() || awayTeam.isEmpty()) {\r\n                    Toast.makeText(MainActivity.this, \"Mohon lengkapi nama tim\", Toast.LENGTH_SHORT).show();\r\n                } else {\r\n                    // Pindah ke MatchActivity\r\n                    Intent intent = new Intent(MainActivity.this, MatchActivity.class);\r\n                    intent.putExtra(\"homeTeam\", homeTeam);\r\n                    intent.putExtra(\"awayTeam\", awayTeam);\r\n\r\n                    // Mengambil URI dari gambar logo Home Team dan Away Team (jika sudah diatur)\r\n                    if (homeTeamLogo.getDrawable() != null) {\r\n                        // Mengambil URI dari ImageView homeTeamLogo\r\n                        Uri homeTeamUri = getImageUri(MainActivity.this, homeTeamLogo.getDrawable());\r\n                        intent.putExtra(\"homeTeamLogoUri\", homeTeamUri.toString());\r\n                    }\r\n\r\n                    if (awayTeamLogo.getDrawable() != null) {\r\n                        // Mengambil URI dari ImageView awayTeamLogo\r\n                        Uri awayTeamUri = getImageUri(MainActivity.this, awayTeamLogo.getDrawable());\r\n                        intent.putExtra(\"awayTeamLogoUri\", awayTeamUri.toString());\r\n                    }\r\n\r\n\r\n                    startActivity(intent);\r\n                }\r\n            }\r\n        });\r\n\r\n        // Menambahkan fungsi untuk mengganti logo Home Team\r\n        homeTeamLogo.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);\r\n\r\n                startActivityForResult(intent, HOME_LOGO_REQUEST_CODE);\r\n            }\r\n        });\r\n\r\n        // Menambahkan fungsi untuk mengganti logo Away Team\r\n        awayTeamLogo.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);\r\n                startActivityForResult(intent, AWAY_LOGO_REQUEST_CODE);\r\n\r\n            }\r\n        });\r\n\r\n        //Fitur Main Activity\r\n        //1. Validasi Input Home Team\r\n        //2. Validasi Input Away Team\r\n        //3. Ganti Logo Home Team\r\n        //4. Ganti Logo Away Team\r\n        //5. Next Button Pindah Ke MatchActivity\r\n    }\r\n\r\n    // Method untuk mendapatkan URI dari Drawable\r\n    private Uri getImageUri(Context context, Drawable drawable) {\r\n        Bitmap bitmap;\r\n        if (drawable instanceof BitmapDrawable) {\r\n            bitmap = ((BitmapDrawable) drawable).getBitmap();\r\n        } else {\r\n            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);\r\n            Canvas canvas = new Canvas(bitmap);\r\n            drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());\r\n            drawable.draw(canvas);\r\n        }\r\n\r\n        // Mengonversi Bitmap menjadi Uri\r\n        ByteArrayOutputStream bytes = new ByteArrayOutputStream();\r\n        bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes);\r\n        String path = MediaStore.Images.Media.insertImage(context.getContentResolver(), bitmap, \"Title\", null);\r\n        return Uri.parse(path);\r\n    }\r\n\r\n    @Override\r\n    protected void onActivityResult(int requestCode, int resultCode, Intent data) {\r\n        super.onActivityResult(requestCode, resultCode, data);\r\n\r\n        if (resultCode == RESULT_OK && data != null && data.getData() != null) {\r\n            Uri uri = data.getData();\r\n            if (requestCode == HOME_LOGO_REQUEST_CODE) {\r\n                homeTeamLogo.setImageURI(uri);\r\n                Toast.makeText(MainActivity.this, \"Logo Home Team diganti\", Toast.LENGTH_SHORT).show();\r\n            } else if (requestCode == AWAY_LOGO_REQUEST_CODE) {\r\n                awayTeamLogo.setImageURI(uri);\r\n                Toast.makeText(MainActivity.this, \"Logo Away Team diganti\", Toast.LENGTH_SHORT).show();\r\n            }\r\n\r\n        }\r\n    }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/id/putraprima/skorbola/MainActivity.java b/app/src/main/java/id/putraprima/skorbola/MainActivity.java
+--- a/app/src/main/java/id/putraprima/skorbola/MainActivity.java	(revision 1e90ebc1334e8dbc7960bc3a961f7395db6ca4db)
++++ b/app/src/main/java/id/putraprima/skorbola/MainActivity.java	(date 1712124870588)
+@@ -21,7 +21,8 @@
+ import java.io.ByteArrayOutputStream;
+ import java.io.IOException;
+ 
+-public class MainActivity extends AppCompatActivity {
++public class
++MainActivity extends AppCompatActivity {
+ 
+     EditText homeTeamInput, awayTeamInput;
+     ImageView homeTeamLogo, awayTeamLogo;
+Index: app/src/main/res/layout/activity_main.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.constraintlayout.widget.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    tools:context=\".MainActivity\">\r\n\r\n    <TextView\r\n        android:id=\"@+id/textView\"\r\n        android:layout_width=\"wrap_content\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_marginTop=\"50dp\"\r\n        android:text=\"Half Live Score\"\r\n        android:textSize=\"30sp\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toTopOf=\"parent\" />\r\n\r\n    <EditText\r\n        android:id=\"@+id/home_team\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_marginLeft=\"20dp\"\r\n        android:layout_marginTop=\"20dp\"\r\n        android:layout_marginRight=\"20dp\"\r\n        android:inputType=\"textPersonName\"\r\n        android:text=\"Home Team\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toBottomOf=\"@+id/textView\" />\r\n\r\n    <EditText\r\n        android:id=\"@+id/away_team\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_marginLeft=\"20dp\"\r\n        android:layout_marginRight=\"20dp\"\r\n        android:layout_marginBottom=\"20dp\"\r\n        android:inputType=\"textPersonName\"\r\n        android:text=\"Away Team\"\r\n        app:layout_constraintBottom_toTopOf=\"@+id/btn_team\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\" />\r\n\r\n    <Button\r\n        android:id=\"@+id/btn_team\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_marginLeft=\"20dp\"\r\n        android:layout_marginRight=\"20dp\"\r\n        android:layout_marginBottom=\"20dp\"\r\n        android:text=\"Next\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\" />\r\n\r\n    <ImageView\r\n        android:id=\"@+id/home_logo\"\r\n        android:layout_width=\"100dp\"\r\n        android:layout_height=\"100dp\"\r\n        android:layout_marginTop=\"20dp\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toBottomOf=\"@+id/home_team\"\r\n        app:srcCompat=\"@mipmap/ic_launcher_round\" />\r\n\r\n    <ImageView\r\n        android:id=\"@+id/away_logo\"\r\n        android:layout_width=\"100dp\"\r\n        android:layout_height=\"100dp\"\r\n        app:layout_constraintBottom_toTopOf=\"@+id/away_team\"\r\n\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toBottomOf=\"@+id/home_logo\"\r\n        app:srcCompat=\"@mipmap/ic_launcher_round\" />\r\n\r\n</androidx.constraintlayout.widget.ConstraintLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+--- a/app/src/main/res/layout/activity_main.xml	(revision 1e90ebc1334e8dbc7960bc3a961f7395db6ca4db)
++++ b/app/src/main/res/layout/activity_main.xml	(date 1713189129093)
+@@ -4,6 +4,7 @@
+     xmlns:tools="http://schemas.android.com/tools"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
++    android:background="@drawable/bg_color"
+     tools:context=".MainActivity">
+ 
+     <TextView
+@@ -11,7 +12,7 @@
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layout_marginTop="50dp"
+-        android:text="Half Live Score"
++        android:text="Live Score"
+         android:textSize="30sp"
+         app:layout_constraintEnd_toEndOf="parent"
+         app:layout_constraintStart_toStartOf="parent"
+@@ -22,11 +23,12 @@
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_marginLeft="20dp"
+-        android:layout_marginTop="20dp"
++        android:layout_marginTop="16dp"
+         android:layout_marginRight="20dp"
+         android:inputType="textPersonName"
+         android:text="Home Team"
+         app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.4"
+         app:layout_constraintStart_toStartOf="parent"
+         app:layout_constraintTop_toBottomOf="@+id/textView" />
+ 
+@@ -36,12 +38,15 @@
+         android:layout_height="wrap_content"
+         android:layout_marginLeft="20dp"
+         android:layout_marginRight="20dp"
+-        android:layout_marginBottom="20dp"
++        android:layout_marginBottom="112dp"
+         android:inputType="textPersonName"
+         android:text="Away Team"
+         app:layout_constraintBottom_toTopOf="@+id/btn_team"
+         app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent" />
++        app:layout_constraintHorizontal_bias="0.4"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/away_logo"
++        app:layout_constraintVertical_bias="0.5" />
+ 
+     <Button
+         android:id="@+id/btn_team"
+@@ -72,8 +77,10 @@
+         app:layout_constraintBottom_toTopOf="@+id/away_team"
+ 
+         app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.498"
+         app:layout_constraintStart_toStartOf="parent"
+         app:layout_constraintTop_toBottomOf="@+id/home_logo"
++        app:layout_constraintVertical_bias="0.896"
+         app:srcCompat="@mipmap/ic_launcher_round" />
+ 
+ </androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/res/drawable/bg_color.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/drawable/bg_color.xml b/app/src/main/res/drawable/bg_color.xml
+new file mode 100644
+--- /dev/null	(date 1712126659717)
++++ b/app/src/main/res/drawable/bg_color.xml	(date 1712126659717)
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="utf-8"?>
++<shape xmlns:android="http://schemas.android.com/apk/res/android">
++
++    <gradient
++        android:angle="10"
++        android:startColor="#495cc7"
++        android:endColor="#cc2cc0"
++        android:type="linear"/>
++</shape>
+\ No newline at end of file
+Index: .idea/deploymentTargetDropDown.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"deploymentTargetDropDown\">\r\n    <value>\r\n      <entry key=\"app\">\r\n        <State>\r\n          <runningDeviceTargetSelectedWithDropDown>\r\n            <Target>\r\n              <type value=\"RUNNING_DEVICE_TARGET\" />\r\n              <deviceKey>\r\n                <Key>\r\n                  <type value=\"SERIAL_NUMBER\" />\r\n                  <value value=\"7d12dad8\" />\r\n                </Key>\r\n              </deviceKey>\r\n            </Target>\r\n          </runningDeviceTargetSelectedWithDropDown>\r\n          <timeTargetWasSelectedWithDropDown value=\"2024-03-26T18:57:50.173065900Z\" />\r\n        </State>\r\n      </entry>\r\n    </value>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/deploymentTargetDropDown.xml b/.idea/deploymentTargetDropDown.xml
+--- a/.idea/deploymentTargetDropDown.xml	(revision 1e90ebc1334e8dbc7960bc3a961f7395db6ca4db)
++++ b/.idea/deploymentTargetDropDown.xml	(date 1712124042866)
+@@ -3,20 +3,7 @@
+   <component name="deploymentTargetDropDown">
+     <value>
+       <entry key="app">
+-        <State>
+-          <runningDeviceTargetSelectedWithDropDown>
+-            <Target>
+-              <type value="RUNNING_DEVICE_TARGET" />
+-              <deviceKey>
+-                <Key>
+-                  <type value="SERIAL_NUMBER" />
+-                  <value value="7d12dad8" />
+-                </Key>
+-              </deviceKey>
+-            </Target>
+-          </runningDeviceTargetSelectedWithDropDown>
+-          <timeTargetWasSelectedWithDropDown value="2024-03-26T18:57:50.173065900Z" />
+-        </State>
++        <State />
+       </entry>
+     </value>
+   </component>
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"VcsDirectoryMappings\">\r\n    <mapping directory=\"\" vcs=\"Git\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+--- a/.idea/vcs.xml	(revision 1e90ebc1334e8dbc7960bc3a961f7395db6ca4db)
++++ b/.idea/vcs.xml	(date 1711546872516)
+@@ -2,5 +2,6 @@
+ <project version="4">
+   <component name="VcsDirectoryMappings">
+     <mapping directory="" vcs="Git" />
++    <mapping directory="$PROJECT_DIR$/android_studio" vcs="Git" />
+   </component>
+ </project>
+\ No newline at end of file
